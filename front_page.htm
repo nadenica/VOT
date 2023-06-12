@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Web App</title>
+    <style>
+        /* CSS styles for the page */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #F5E6F8; /* Light purple shade */
+        }
+
+        /* CSS styles for the container */
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        /* CSS styles for the vertical lines */
+        .line {
+            position:absolute;
+            left: -100px;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+        }
+
+        .line.black {
+            background-color: #000001; /* Black */
+        }
+
+        .line.purple {
+            background-color: #cb80e1; /* Purple */
+        }
+
+        .line.white {
+            background-color: #FFFFFF; /* White */
+        }
+
+        /* CSS styles for the headline */
+        h1 {
+            font-size: 50px;
+            margin-bottom: 200px;
+        }
+
+        /* CSS styles for the buttons */
+        .button {
+            width: 250px;
+            height: 70px;
+            margin-bottom: 30px;
+            background-color: #4D3196; /* Purple shade */
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="line black"></div>
+        <div class="line purple"></div>
+        <div class="line white"></div>
+        <h1>My series diary!</h1>
+        <button class="button" onclick="location.href='watched.htm'">Watched</button>
+        <button class="button" onclick="location.href='watching_now.htm'">Watching now</button>
+        <button class="button" onclick="location.href='want2watch.htm'">Want to watch</button>
+    </div>
+</body>
+</html>

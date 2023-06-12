@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            background-color: lightyellow;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            padding-top: 50px;
+        }
+
+        .rectangle {
+            width: 700px;
+            height: 200px;
+            background-color: #ffc33b;
+            margin-top: 150px;
+            padding: 40px;
+        }
+
+        .small-headline {
+            font-size: 28px;
+            font-family: "Comfortaa", cursive;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .purple-circle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 1000px;
+            height: 300px;
+            background-color: #4D3196;
+            border-radius: 70% 50% 200% 0%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #fefefe;
+            font-family: cursive;
+            font-size: 24px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 240px;
+            height: 120px;
+            border-radius: 200% 0% 70% 50%;
+            background-color: #D5B8E8;
+            margin: 20px auto;
+        }
+
+        .add-button {
+            width: 50px;
+            height: 30px;
+            margin-bottom: 30px;
+            background-color: #D5B8E8; /* Purple shade */
+            color: white;
+            font-size: 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="purple-circle">
+        <h1>Watched series!</h1>
+    </div>
+
+    <div class="button-container">
+        <button class="add-button" onclick="addRectangle()">add</button>
+    </div>
+
+    <div id="rectangleContainer"></div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        const accountName = 'myseries';
+        const containerName = 'mycontainer';
+
+        async function addRectangle() {
+            var rectangleContainer = document.getElementById("rectangleContainer");
+            var rectangle = document.createElement("div");
+            rectangle.classList.add("rectangle");
+
+            var smallHeadline = document.createElement("input");
+            smallHeadline.classList.add("small-headline");
+            smallHeadline.setAttribute("type", "text");
+            smallHeadline.setAttribute("placeholder", "Enter the name of the show");
+
+            var textField = document.createElement("textarea");
+            textField.setAttribute("rows", "10");
+            textField.setAttribute("cols", "93");
+            textField.setAttribute("wrap", "hard");
+            textField.setAttribute("placeholder", "Enter your opinion on the show!");
+
+            rectangle.appendChild(smallHeadline);
+            rectangle.appendChild(textField);
+
+            rectangleContainer.appendChild(rectangle);
+
+            // запазвам текстовата информация след кликане в блоба
+            var addButton = rectangle.querySelector(".add-button");
+            addButton.addEventListener("click", async function () {
+                const blobName = Date.now().toString(); // Use a unique name for each blob
+
+                //взимам текстовата информация от текстовите полета
+                const showName = smallHeadline.value;
+                const opinionText = textField.value;
+
+                // конструирам блоба и съдържанието му
+                const blobContent = `${showName}\n${opinionText}`;
+
+                // правя урл на блоба
+                const blobUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}`;
+
+                // пращам POST request за да запазя нещата в блоба
+                $.ajax({
+                    url: blobUrl,
+                    type: 'PUT',
+                    data: blobContent,
+                    contentType: 'text/plain',
+                    success: function () {
+                        console.log('Blob content saved successfully.');
+                    },
+                    error: function () {
+                        console.error('Error saving blob content.');
+                    }
+                });
+            });
+
+            // възстановява и показва информацията
+            await retrieveData();
+        }
+
+        async function retrieveData() {
+            const containerUrl = `https://${accountName}.blob.core.windows.net/${containerName}?restype=container&comp=list`;
+            $.ajax({
+                url: containerUrl,
+                type: 'GET',
+                success: function (data) {
+                    $(data).find('Blob').each(function () {
+                        const blobUrl = $(this).find('Url').text();
+                        $.ajax({
+                            url: blobUrl,
+                            type: 'GET',
+                            success: function (blobContent) {
+                                const rectangleContainer = document.getElementById("rectangleContainer");
+                                const rectangle = document.createElement("div");
+                                rectangle.classList.add("rectangle");
+
+                                const smallHeadline = document.createElement("input");
+                                smallHeadline.classList.add("small-headline");
+                                smallHeadline.setAttribute("type", "text");
+                                smallHeadline.setAttribute("placeholder", "Enter the name of the show");
+                                smallHeadline.value = blobContent.split('\n')[0];
+
+                                const textField = document.createElement("textarea");
+                                textField.setAttribute("rows", "10");
+                                textField.setAttribute("cols", "93");
+                                textField.setAttribute("wrap", "hard");
+                                textField.setAttribute("placeholder", "Enter your opinion on the show!");
+                                textField.value = blobContent.split('\n').slice(1).join('\n');
+
+                                rectangle.appendChild(smallHeadline);
+                                rectangle.appendChild(textField);
+
+                                rectangleContainer.appendChild(rectangle);
+                            },
+                            error: function () {
+                                console.error('Error retrieving blob content.');
+                            }
+                        });
+                    });
+                },
+                error: function () {
+                    console.error('Error retrieving blob list.');
+                }
+            });
+        }
+
+        // Извиквам retrieveData когато страницата зареди
+        window.onload = retrieveData;
+    </script>
+
+</body>
+</html>
