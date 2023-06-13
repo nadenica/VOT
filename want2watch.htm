@@ -107,13 +107,13 @@
 
             rectangleContainer.appendChild(rectangle);
 
-            // Save data to Azure Blob Storage and Azure Table Storage
+            // saves data to Azure Blob Storage and Azure Table Storage
             var addButton = rectangle.querySelector(".add-button");
             addButton.addEventListener("click", async function () {
                 const showName = smallHeadline.value;
                 const opinionText = textField.value;
 
-                // Save data to Azure Blob Storage
+                // saves data to Azure Blob Storage
                 const blobName = Date.now().toString(); // Use a unique name for each blob
                 const blobContent = `${showName}\n${opinionText}`;
                 const blobUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}`;
