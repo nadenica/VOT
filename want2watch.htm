@@ -58,7 +58,7 @@
             width: 50px;
             height: 30px;
             margin-bottom: 30px;
-            background-color: #D5B8E8; 
+            background-color: #D5B8E8;
             color: white;
             font-size: 20px;
             border: none;
@@ -78,9 +78,13 @@
     <div id="rectangleContainer"></div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage/2.10.5/azure-storage.blob.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage/2.10.5/azure-storage.table.js"></script>
     <script>
         const accountName = 'myseries';
         const containerName = 'mycontainer';
+        const tableName = 'watched';
+        const tablePartitionKey = 'rectangleData';
 
         async function addRectangle() {
             var rectangleContainer = document.getElementById("rectangleContainer");
@@ -103,22 +107,16 @@
 
             rectangleContainer.appendChild(rectangle);
 
-            // запазвам текстовата информация след кликане в блоба
+            // Save data to Azure Blob Storage and Azure Table Storage
             var addButton = rectangle.querySelector(".add-button");
             addButton.addEventListener("click", async function () {
-                const blobName = Date.now().toString(); // Use a unique name for each blob
-
-                //взимам текстовата информация от текстовите полета
                 const showName = smallHeadline.value;
                 const opinionText = textField.value;
 
-                // конструирам блоба и съдържанието му
+                // Save data to Azure Blob Storage
+                const blobName = Date.now().toString(); // Use a unique name for each blob
                 const blobContent = `${showName}\n${opinionText}`;
-
-                // правя урл на блоба
                 const blobUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}`;
-
-                // пращам POST request за да запазя нещата в блоба
                 $.ajax({
                     url: blobUrl,
                     type: 'PUT',
@@ -131,9 +129,25 @@
                         console.error('Error saving blob content.');
                     }
                 });
+
+                // Save data to Azure Table Storage
+                const tableService = AzureStorage.Table.createTableService(accountName);
+                const entity = {
+                    PartitionKey: tablePartitionKey,
+                    RowKey: blobName,
+                    ShowName: showName,
+                    OpinionText: opinionText
+                };
+                tableService.insertOrReplaceEntity(tableName, entity, function (error, result, response) {
+                    if (!error) {
+                        console.log('Entity saved successfully.');
+                    } else {
+                        console.error('Error saving entity:', error);
+                    }
+                });
             });
 
-            // възстановява и показва информацията
+            // Retrieve data from Azure Blob Storage and Azure Table Storage
             await retrieveData();
         }
 
@@ -181,9 +195,42 @@
                     console.error('Error retrieving blob list.');
                 }
             });
+
+            // Retrieve data from Azure Table Storage
+            const tableService = AzureStorage.Table.createTableService(accountName);
+            const query = new AzureStorage.Table.TableQuery().where('PartitionKey eq ?', tablePartitionKey);
+            tableService.queryEntities(tableName, query, null, function (error, result, response) {
+                if (!error) {
+                    result.entries.forEach(function (entry) {
+                        const rectangleContainer = document.getElementById("rectangleContainer");
+                        const rectangle = document.createElement("div");
+                        rectangle.classList.add("rectangle");
+
+                        const smallHeadline = document.createElement("input");
+                        smallHeadline.classList.add("small-headline");
+                        smallHeadline.setAttribute("type", "text");
+                        smallHeadline.setAttribute("placeholder", "Enter the name of the show");
+                        smallHeadline.value = entry.ShowName;
+
+                        const textField = document.createElement("textarea");
+                        textField.setAttribute("rows", "10");
+                        textField.setAttribute("cols", "93");
+                        textField.setAttribute("wrap", "hard");
+                        textField.setAttribute("placeholder", "Enter your opinion on the show!");
+                        textField.value = entry.OpinionText;
+
+                        rectangle.appendChild(smallHeadline);
+                        rectangle.appendChild(textField);
+
+                        rectangleContainer.appendChild(rectangle);
+                    });
+                } else {
+                    console.error('Error retrieving entities:', error);
+                }
+            });
         }
 
-        // Извиквам retrieveData когато страницата зареди
+        // Call retrieveData when the page loads
         window.onload = retrieveData;
     </script>
 </body>
